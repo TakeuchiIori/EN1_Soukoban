@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.Timeline;
 using UnityEngine;
 
@@ -67,31 +68,69 @@ public class NewBehaviourScript : MonoBehaviour
         };
         // “ñdfor•¶‚Å“ñŸŒ³”z—ñ‚Ìî•ñ‚ğo—Í
         field = new GameObject
-        [
-        map.GetLength(0),
-        map.GetLength(1)
-        ];
-        for(int y = 0; y <  map.GetLength(0); y++)
+       [
+       map.GetLength(0),
+       map.GetLength(1)
+       ];
+        for (int y = 0; y < map.GetLength(0); y++)
         {
-            for(int x = 0;x <  map.GetLength(1); x++)
+            for (int x = 0; x < map.GetLength(1); x++)
             {
-                field[y, x] = Instantiate(
-                    playerPrefab,
-                    new Vector3(
-                    x - map.GetLength(1)/2, 
-                    - y + map.GetLength(0)/2, 
-                    0),
-                    Quaternion.identity
-                    );
+                if (map[y, x] == 1)
+                {
+                    field[y, x] = Instantiate(
+                        playerPrefab,
+                        new Vector3(
+                        x - map.GetLength(1) / 2,
+                        -y + map.GetLength(0) / 2,
+                        0),
+                        Quaternion.identity
+                        );
+                }
             }
         }
-
+        
+      
     }
+    
 
     // Update is called once per frame
     void Update()
     {
-     
+        if (Input.GetKeyUp(KeyCode.W))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", 
+                playerIndex, 
+                playerIndex + new Vector2Int(0,-1)
+                );
+
+        }
+
+        if (Input.GetKeyUp(KeyCode.S))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player", 
+                playerIndex,
+                playerIndex + new Vector2Int(0, 1));
+        }
+        if (Input.GetKeyUp(KeyCode.D))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player",
+               playerIndex,
+               playerIndex + new Vector2Int(1, 0)
+               );
+        }
+
+        if (Input.GetKeyUp(KeyCode.A))
+        {
+            Vector2Int playerIndex = GetPlayerIndex();
+            MoveNumber("Player",
+                playerIndex,
+                playerIndex + new Vector2Int(-1, 0)
+                );
+        }
     }
 
 }
