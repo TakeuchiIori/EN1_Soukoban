@@ -74,6 +74,8 @@ public class NewBehaviourScript : MonoBehaviour
         // 縦軸横軸の配列外参照していないか
         if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
         if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
+        // 移動先に壁があるかどうかチェック
+        if (map[moveTo.y, moveTo.x] == 4) { return false; } // 壁があれば移動しない
         // Boxタグを持っていたら再起処理
         if (field[moveTo.y,moveTo.x] != null && field[moveTo.y,moveTo.x].tag == "Box")
         {
