@@ -14,6 +14,7 @@ public class NewBehaviourScript : MonoBehaviour
     public GameObject goalPrefab;
     public GameObject clearText;
     public GameObject ParticlePrefab;
+    public GameObject BlockPrefab;
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
@@ -81,8 +82,8 @@ public class NewBehaviourScript : MonoBehaviour
             // 箱の移動に失敗したらプレイヤーも失敗
             if (!success) { return false; }
             }
-        // GameObjectの座標(Position)を移動させてからインデックスの入れ替え
-        Vector3 moveToPosition =
+            // GameObjectの座標(Position)を移動させてからインデックスの入れ替え
+            Vector3 moveToPosition =
            IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
         field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition );
         field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
@@ -103,12 +104,17 @@ public class NewBehaviourScript : MonoBehaviour
     void Start()
     {
         Screen.SetResolution(1280, 720, false);
-        map = new int[,] { // 3をゴール
-        { 0,0,0,0,3 },
-        { 0,0,2,2,0 },
-        { 0,0,1,0,0 },
-        { 0,0,0,0,0 },
-        { 3,0,0,0,0 },
+        map = new int[,] { // 0をなにもないところ // 1を自機 // 2を動く壁 // 3をゴール // 4を動かない壁
+        { 4,4,4,4,4,4,4,4,4,4,4, },
+        { 4,3,0,0,0,0,0,0,2,0,4, },
+        { 4,0,0,2,0,0,0,0,2,0,4, },
+        { 4,0,0,0,0,1,0,0,0,0,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,3,0,0,0,0,0,0,0,3,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,4,4,4,4,4,4,4,4,4,4, },
         };
         // 二重for文で二次元配列の情報を出力
         field = new GameObject
@@ -144,7 +150,15 @@ public class NewBehaviourScript : MonoBehaviour
                         Quaternion.identity
                         );
                 }
-                
+                if (map[y, x] == 4)
+                {
+                    Instantiate(
+                    BlockPrefab,
+                    IndexToPosition(new Vector2Int(x, y)),
+                    Quaternion.identity
+                    );
+                }
+
             }
         }
 
@@ -154,7 +168,7 @@ public class NewBehaviourScript : MonoBehaviour
 
     void Update()
     {
-
+        
         if (Input.GetKeyUp(KeyCode.W))
         {
             Vector2Int playerIndex = GetPlayerIndex();
