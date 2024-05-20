@@ -4,10 +4,6 @@ using UnityEngine;
 
 public class Move : MonoBehaviour
 {
-    //public void MoveTo(Vector3 destination)
-    //{
-    //    transform.position = destination;
-    //}
     // Š®—¹‚Ü‚Å‚É‚©‚©‚éŽžŠÔ
     private float timeTaken = 0.2f;
     // Œo‰ßŽžŠÔ

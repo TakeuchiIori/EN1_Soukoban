@@ -290,6 +290,7 @@ MonoBehaviour:
   boxPrefab: {fileID: 207005503024005709, guid: b96b9fbebb2e2284abc7453ca9dcc2df, type: 3}
   goalPrefab: {fileID: 2311083404098219418, guid: 2a8f4ba20829f854c8d8c4ee4349f3be, type: 3}
   clearText: {fileID: 246559117}
+  ParticlePrefab: {fileID: 3184464676034738721, guid: 4dfca2247f14a0249a72281907eb262d, type: 3}
 --- !u!4 &329579692
 Transform:
   m_ObjectHideFlags: 0

@@ -17,17 +17,6 @@ public class NewBehaviourScript : MonoBehaviour
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
-    //void PrintAarray()//Indexなどを調べる処理
-    //{
-    //    string debugText = "";
-    //    for (int i = 0; i < map_2.Length; i++)
-    //    {
-    //        debugText += map_2[i].ToString() + ",";
-    //    }
-    //    Debug.Log(debugText);
-    //}
-
-
     bool IsCleard()
     {
         // Vector2Int型の可変配列の作成
@@ -66,10 +55,6 @@ public class NewBehaviourScript : MonoBehaviour
             0);
     }
 
- 
-            //       index.x ,
-            //map.GetLength(0) - index.y,
-            //0);
     Vector2Int GetPlayerIndex()// 1が格納されているIndexを取得する処理
     {
         for (int y = 0; y < field.GetLength(0); y++)
@@ -95,16 +80,22 @@ public class NewBehaviourScript : MonoBehaviour
             bool success = MoveNumber(tag, moveTo, moveTo + velocity);
             // 箱の移動に失敗したらプレイヤーも失敗
             if (!success) { return false; }
-        }
+            }
         // GameObjectの座標(Position)を移動させてからインデックスの入れ替え
-        //field[moveFrom.y, moveFrom.x].transform.position =
-        //    new Vector3(moveTo.x, field.GetLength(0) - moveTo.y, 0);
         Vector3 moveToPosition =
            IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
         field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition );
         field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
         field[moveFrom.y, moveFrom.x] = null;
-        return true;
+        for (int i = 0; i < 10; ++i)
+        {
+            Instantiate(
+            ParticlePrefab,
+            IndexToPosition(moveFrom),
+            Quaternion.identity
+        );
+        }
+            return true;
     }
 
 
@@ -160,11 +151,10 @@ public class NewBehaviourScript : MonoBehaviour
  
 
     }
-    //  x - map.GetLength(1) / 2, -y + map.GetLength(0) / 2,
 
-    // Update is called once per frame
     void Update()
     {
+
         if (Input.GetKeyUp(KeyCode.W))
         {
             Vector2Int playerIndex = GetPlayerIndex();
@@ -172,8 +162,6 @@ public class NewBehaviourScript : MonoBehaviour
                 playerIndex, 
                 playerIndex + new Vector2Int(0,-1)
                 );
-            Instantiate(ParticlePrefab);
-           
         }
 
         if (Input.GetKeyUp(KeyCode.S))
@@ -183,9 +171,6 @@ public class NewBehaviourScript : MonoBehaviour
                 playerIndex,
                 playerIndex + new Vector2Int(0, 1)
                 );
-
-            Instantiate(ParticlePrefab);
-
         }
 
         if (Input.GetKeyUp(KeyCode.D))
@@ -195,8 +180,6 @@ public class NewBehaviourScript : MonoBehaviour
                playerIndex,
                playerIndex + new Vector2Int(1, 0)
                );
-            Instantiate(ParticlePrefab);
-         
         }
 
         if (Input.GetKeyUp(KeyCode.A))
@@ -206,8 +189,7 @@ public class NewBehaviourScript : MonoBehaviour
                 playerIndex,
                 playerIndex + new Vector2Int(-1, 0)
                 );
-            Instantiate(ParticlePrefab);
-           
+
         }
         // もしクリアしてたら
         if (IsCleard())
