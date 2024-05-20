@@ -100,9 +100,18 @@ public class NewBehaviourScript : MonoBehaviour
         }
             return true;
     }
-
-
-
+    void ResetGame()
+    {
+        // すべてのオブジェクトを破棄
+        foreach (GameObject obj in field)
+        {
+            Destroy(obj);
+        }
+        // 再度スタート位置にプレイヤーとボックスを配置
+        Start();
+    }
+    // ゲームをクリアしてリセットするまでの時間
+    private float clearTimer;
     void Start()
     {
         Screen.SetResolution(1280, 720, false);
@@ -210,9 +219,15 @@ public class NewBehaviourScript : MonoBehaviour
         // もしクリアしてたら
         if (IsCleard())
         {
+            clearTimer += 1.0f / 60.0f;
             // ゲームオブジェクトのSetActiveメソッドを使い有効化
             clearText.SetActive(true);
             Debug.Log("Clear");
+            if (clearTimer >= 10.0f)
+            {
+                // リセットする
+                ResetGame();
+            }
         }
         else
         {
