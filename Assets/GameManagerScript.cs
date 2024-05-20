@@ -179,42 +179,45 @@ public class NewBehaviourScript : MonoBehaviour
 
     void Update()
     {
-        
-        if (Input.GetKeyUp(KeyCode.W))
+        if (IsCleard() == false)
         {
-            Vector2Int playerIndex = GetPlayerIndex();
-            MoveNumber("Player", 
-                playerIndex, 
-                playerIndex + new Vector2Int(0,-1)
-                );
-        }
 
-        if (Input.GetKeyUp(KeyCode.S))
-        {
-            Vector2Int playerIndex = GetPlayerIndex();
-            MoveNumber("Player", 
-                playerIndex,
-                playerIndex + new Vector2Int(0, 1)
-                );
-        }
+            if (Input.GetKeyUp(KeyCode.W))
+            {
+                Vector2Int playerIndex = GetPlayerIndex();
+                MoveNumber("Player",
+                    playerIndex,
+                    playerIndex + new Vector2Int(0, -1)
+                    );
+            }
 
-        if (Input.GetKeyUp(KeyCode.D))
-        {
-            Vector2Int playerIndex = GetPlayerIndex();
-            MoveNumber("Player",
-               playerIndex,
-               playerIndex + new Vector2Int(1, 0)
-               );
-        }
+            if (Input.GetKeyUp(KeyCode.S))
+            {
+                Vector2Int playerIndex = GetPlayerIndex();
+                MoveNumber("Player",
+                    playerIndex,
+                    playerIndex + new Vector2Int(0, 1)
+                    );
+            }
 
-        if (Input.GetKeyUp(KeyCode.A))
-        {
-            Vector2Int playerIndex = GetPlayerIndex();
-            MoveNumber("Player",
-                playerIndex,
-                playerIndex + new Vector2Int(-1, 0)
-                );
+            if (Input.GetKeyUp(KeyCode.D))
+            {
+                Vector2Int playerIndex = GetPlayerIndex();
+                MoveNumber("Player",
+                   playerIndex,
+                   playerIndex + new Vector2Int(1, 0)
+                   );
+            }
 
+            if (Input.GetKeyUp(KeyCode.A))
+            {
+                Vector2Int playerIndex = GetPlayerIndex();
+                MoveNumber("Player",
+                    playerIndex,
+                    playerIndex + new Vector2Int(-1, 0)
+                    );
+
+            }
         }
         // もしクリアしてたら
         if (IsCleard())
@@ -223,7 +226,7 @@ public class NewBehaviourScript : MonoBehaviour
             // ゲームオブジェクトのSetActiveメソッドを使い有効化
             clearText.SetActive(true);
             Debug.Log("Clear");
-            if (clearTimer >= 10.0f)
+            if (clearTimer >= 20.0f)
             {
                 // リセットする
                 ResetGame();
