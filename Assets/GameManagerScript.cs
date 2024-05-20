@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor.Timeline;
 using UnityEngine;
+
+
 
 public class NewBehaviourScript : MonoBehaviour
 {
@@ -10,6 +10,10 @@ public class NewBehaviourScript : MonoBehaviour
     int[] map_2;
     // 追加
     public GameObject playerPrefab;
+    public GameObject boxPrefab;
+    public GameObject goalPrefab;
+    public GameObject clearText;
+    public GameObject ParticlePrefab;
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
@@ -23,7 +27,50 @@ public class NewBehaviourScript : MonoBehaviour
     //    Debug.Log(debugText);
     //}
 
-   Vector2Int GetPlayerIndex()// 1が格納されているIndexを取得する処理
+
+    bool IsCleard()
+    {
+        // Vector2Int型の可変配列の作成
+        List<Vector2Int> goals = new List<Vector2Int>();
+        for (int y = 0; y < map.GetLength(0); y++)
+        {
+            for (int x = 0; x < map.GetLength(1); x++)
+            {
+                // 格納場所か否かを判断
+                if (map[y,x] == 3)
+                {
+                    // 格納場所のインデックスを控えておく
+                    goals.Add(new Vector2Int(x,y));
+                }
+            }
+        }
+
+        for(int i = 0; i < goals.Count; i++)
+        {
+            GameObject f = field[goals[i].y,goals[i].x];
+            if(f == null || f.tag != "Box")
+            {
+                // 1つでも箱が無かったら条件未達成
+                return false;
+            }
+        }
+        // 条件未達成でなければ条件達成
+        return true;
+    }
+
+    Vector3 IndexToPosition(Vector2Int index)
+    {
+        return new Vector3(
+           index.x - map.GetLength(1) / 2 + 0.5f,
+           -index.y + map.GetLength(0) / 2,
+            0);
+    }
+
+ 
+            //       index.x ,
+            //map.GetLength(0) - index.y,
+            //0);
+    Vector2Int GetPlayerIndex()// 1が格納されているIndexを取得する処理
     {
         for (int y = 0; y < field.GetLength(0); y++)
         {
@@ -50,8 +97,11 @@ public class NewBehaviourScript : MonoBehaviour
             if (!success) { return false; }
         }
         // GameObjectの座標(Position)を移動させてからインデックスの入れ替え
-        field[moveFrom.y, moveFrom.x].transform.position =
-            new Vector3(moveTo.x, field.GetLength(0) - moveTo.y, 0);
+        //field[moveFrom.y, moveFrom.x].transform.position =
+        //    new Vector3(moveTo.x, field.GetLength(0) - moveTo.y, 0);
+        Vector3 moveToPosition =
+           IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
+        field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition );
         field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
         field[moveFrom.y, moveFrom.x] = null;
         return true;
@@ -61,10 +111,13 @@ public class NewBehaviourScript : MonoBehaviour
 
     void Start()
     {
-        map = new int[,] {
-        { 0,0,0,0,0 },
-        { 0,0,0,0,0 },
+        Screen.SetResolution(1280, 720, false);
+        map = new int[,] { // 3をゴール
+        { 0,0,0,0,3 },
+        { 0,0,2,2,0 },
         { 0,0,1,0,0 },
+        { 0,0,0,0,0 },
+        { 3,0,0,0,0 },
         };
         // 二重for文で二次元配列の情報を出力
         field = new GameObject
@@ -80,19 +133,34 @@ public class NewBehaviourScript : MonoBehaviour
                 {
                     field[y, x] = Instantiate(
                         playerPrefab,
-                        new Vector3(
-                        x - map.GetLength(1) / 2,
-                        -y + map.GetLength(0) / 2,
-                        0),
+                       IndexToPosition(new Vector2Int(x,y)),
                         Quaternion.identity
                         );
                 }
+                if (map[y, x] == 2)
+                {
+                    field[y, x] = Instantiate(
+                        boxPrefab,
+                         IndexToPosition(new Vector2Int(x, y)),
+                        Quaternion.identity
+                        );
+                } 
+                if(map[y, x] == 3)
+                {
+                        Instantiate(
+                        goalPrefab,
+                        IndexToPosition(new Vector2Int(x, y)),
+                        Quaternion.identity
+                        );
+                }
+                
             }
         }
-        
-      
+
+ 
+
     }
-    
+    //  x - map.GetLength(1) / 2, -y + map.GetLength(0) / 2,
 
     // Update is called once per frame
     void Update()
@@ -104,7 +172,8 @@ public class NewBehaviourScript : MonoBehaviour
                 playerIndex, 
                 playerIndex + new Vector2Int(0,-1)
                 );
-
+            Instantiate(ParticlePrefab);
+           
         }
 
         if (Input.GetKeyUp(KeyCode.S))
@@ -112,8 +181,13 @@ public class NewBehaviourScript : MonoBehaviour
             Vector2Int playerIndex = GetPlayerIndex();
             MoveNumber("Player", 
                 playerIndex,
-                playerIndex + new Vector2Int(0, 1));
+                playerIndex + new Vector2Int(0, 1)
+                );
+
+            Instantiate(ParticlePrefab);
+
         }
+
         if (Input.GetKeyUp(KeyCode.D))
         {
             Vector2Int playerIndex = GetPlayerIndex();
@@ -121,6 +195,8 @@ public class NewBehaviourScript : MonoBehaviour
                playerIndex,
                playerIndex + new Vector2Int(1, 0)
                );
+            Instantiate(ParticlePrefab);
+         
         }
 
         if (Input.GetKeyUp(KeyCode.A))
@@ -130,7 +206,21 @@ public class NewBehaviourScript : MonoBehaviour
                 playerIndex,
                 playerIndex + new Vector2Int(-1, 0)
                 );
+            Instantiate(ParticlePrefab);
+           
         }
-    }
+        // もしクリアしてたら
+        if (IsCleard())
+        {
+            // ゲームオブジェクトのSetActiveメソッドを使い有効化
+            clearText.SetActive(true);
+            Debug.Log("Clear");
+        }
+        else
+        {
+            clearText.SetActive(false);
+        }
+
+    }//Update
 
 }
