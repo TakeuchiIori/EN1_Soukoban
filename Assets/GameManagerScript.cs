@@ -1,15 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Windows.Input;
 using UnityEngine;
-
-
 
 public class NewBehaviourScript : MonoBehaviour
 {
-   // Start is called before the first frame update
     int[] map_2;
-    // 追加
     public GameObject playerPrefab;
     public GameObject boxPrefab;
     public GameObject goalPrefab;
@@ -19,33 +16,30 @@ public class NewBehaviourScript : MonoBehaviour
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
+    private UndoManager undoManager = new UndoManager(); // UndoManagerのインスタンス化
+
     bool IsCleard()
     {
-        // Vector2Int型の可変配列の作成
         List<Vector2Int> goals = new List<Vector2Int>();
         for (int y = 0; y < map.GetLength(0); y++)
         {
             for (int x = 0; x < map.GetLength(1); x++)
             {
-                // 格納場所か否かを判断
-                if (map[y,x] == 3)
+                if (map[y, x] == 3)
                 {
-                    // 格納場所のインデックスを控えておく
-                    goals.Add(new Vector2Int(x,y));
+                    goals.Add(new Vector2Int(x, y));
                 }
             }
         }
 
-        for(int i = 0; i < goals.Count; i++)
+        for (int i = 0; i < goals.Count; i++)
         {
-            GameObject f = field[goals[i].y,goals[i].x];
-            if(f == null || f.tag != "Box")
+            GameObject f = field[goals[i].y, goals[i].x];
+            if (f == null || f.tag != "Box")
             {
-                // 1つでも箱が無かったら条件未達成
                 return false;
             }
         }
-        // 条件未達成でなければ条件達成
         return true;
     }
 
@@ -57,220 +51,260 @@ public class NewBehaviourScript : MonoBehaviour
             0);
     }
 
-    Vector2Int GetPlayerIndex()// 1が格納されているIndexを取得する処理
+    Vector2Int GetPlayerIndex()
     {
         for (int y = 0; y < field.GetLength(0); y++)
         {
-           for(int x = 0;x < field.GetLength(1); x++)
+            for (int x = 0; x < field.GetLength(1); x++)
             {
-                if (field[y,x] == null) { continue; }
-                if (field[y,x].tag == "Player") { return new Vector2Int(x, y); }
+                if (field[y, x] == null) { continue; }
+                if (field[y, x].tag == "Player") { return new Vector2Int(x, y); }
             }
         }
-        return new Vector2Int(-1,-1);
+        return new Vector2Int(-1, -1);
     }
 
-    bool MoveNumber(string tag, Vector2Int moveFrom, Vector2Int moveTo)//配列外条件 
+    public bool MoveNumber(string tag, Vector2Int moveFrom, Vector2Int moveTo, bool isRecording = true)
     {
-        // 縦軸横軸の配列外参照していないか
+        Debug.Log($"MoveNumber called with tag={tag}, moveFrom={moveFrom}, moveTo={moveTo}, isRecording={isRecording}");
+
         if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
         if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
-        // 移動先に壁があるかどうかチェック
-        if (map[moveTo.y, moveTo.x] == 4) { return false; } // 壁があれば移動しない
-        // Boxタグを持っていたら再起処理
-        if (field[moveTo.y,moveTo.x] != null && field[moveTo.y,moveTo.x].tag == "Box")
+        if (map[moveTo.y, moveTo.x] == 4) { return false; }
+        if (field[moveTo.y, moveTo.x] != null && field[moveTo.y, moveTo.x].tag == "Box")
         {
             Vector2Int velocity = moveTo - moveFrom;
-            bool success = MoveNumber(tag, moveTo, moveTo + velocity);
-            // 箱の移動に失敗したらプレイヤーも失敗
+            bool success = MoveNumber(tag, moveTo, moveTo + velocity, false);
             if (!success) { return false; }
-            }
-            // GameObjectの座標(Position)を移動させてからインデックスの入れ替え
-            Vector3 moveToPosition =
-           IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
-        field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition );
+        }
+
+        Vector3 moveToPosition = IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
+        field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition);
         field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
         field[moveFrom.y, moveFrom.x] = null;
+
         for (int i = 0; i < 10; ++i)
         {
-            Instantiate(
-            ParticlePrefab,
-            IndexToPosition(moveFrom),
-            Quaternion.identity
-        );
+            Instantiate(ParticlePrefab, IndexToPosition(moveFrom), Quaternion.identity);
         }
-            return true;
+
+        if (isRecording)
+        {
+            undoManager.ExecuteCommand(new MoveCommand(field, tag, moveFrom, moveTo, this));
+        }
+
+        return true;
     }
+
     void ResetGame()
     {
-        // すべてのオブジェクトを破棄
         foreach (GameObject obj in field)
         {
             Destroy(obj);
         }
-        // 再度スタート位置にプレイヤーとボックスを配置
         Start();
     }
-    // ゲームをクリアしてリセットするまでの時間
+
     private float clearTimer;
     void InitializeStage1()
     {
         map = new int[,] {
-        { 4,4,4,4,4,4,4,4,4,4,4, },
-        { 4,3,0,0,0,0,0,0,2,0,4, },
-        { 4,0,0,2,0,0,0,0,2,0,4, },
-        { 4,0,0,0,0,1,0,0,0,0,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,3,0,0,0,0,0,0,0,3,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,4,4,4,4,4,4,4,4,4,4, },
-    };
+            { 4,4,4,4,4,4,4,4,4,4,4, },
+            { 4,3,0,0,0,0,0,0,2,0,4, },
+            { 4,0,0,2,0,0,0,0,2,0,4, },
+            { 4,0,0,0,0,1,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,3,0,0,0,0,0,0,0,3,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,4,4,4,4,4,4,4,4,4,4, },
+        };
     }
     void InitializeStage2()
     {
         map = new int[,] {
-        { 4,4,4,4,4,4,4,4,4,4,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,0,3,3,0,0,0,0,0,0,4, },
-        { 4,0,0,0,0,1,0,0,0,0,4, },
-        { 4,0,0,0,0,0,0,0,2,0,4, },
-        { 4,0,0,0,0,0,0,0,2,0,4, },
-        { 4,0,0,0,0,2,0,0,0,0,4, },
-        { 4,0,3,0,0,0,0,0,0,0,4, },
-        { 4,0,0,0,0,0,0,0,0,0,4, },
-        { 4,4,4,4,4,4,4,4,4,4,4, },
-    };
+            { 4,4,4,4,4,4,4,4,4,4,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,3,3,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,1,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,2,0,4, },
+            { 4,0,0,0,0,0,0,0,2,0,4, },
+            { 4,0,0,0,0,2,0,0,0,0,4, },
+            { 4,0,3,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,4, },
+            { 4,4,4,4,4,4,4,4,4,4,4, },
+        };
     }
 
     private void InitializeObjects()
     {
-        // 二重for文で二次元配列の情報を出力
-        field = new GameObject
-       [
-       map.GetLength(0),
-       map.GetLength(1)
-       ];
+        field = new GameObject[map.GetLength(0), map.GetLength(1)];
         for (int y = 0; y < map.GetLength(0); y++)
         {
             for (int x = 0; x < map.GetLength(1); x++)
             {
                 if (map[y, x] == 1)
                 {
-                    field[y, x] = Instantiate(
-                        playerPrefab,
-                       IndexToPosition(new Vector2Int(x, y)),
-                        Quaternion.identity
-                        );
+                    field[y, x] = Instantiate(playerPrefab, IndexToPosition(new Vector2Int(x, y)), Quaternion.identity);
                 }
                 if (map[y, x] == 2)
                 {
-                    field[y, x] = Instantiate(
-                        boxPrefab,
-                         IndexToPosition(new Vector2Int(x, y)),
-                        Quaternion.identity
-                        );
+                    field[y, x] = Instantiate(boxPrefab, IndexToPosition(new Vector2Int(x, y)), Quaternion.identity);
                 }
                 if (map[y, x] == 3)
                 {
-                    Instantiate(
-                    goalPrefab,
-                    IndexToPosition(new Vector2Int(x, y)),
-                    Quaternion.identity
-                    );
+                    Instantiate(goalPrefab, IndexToPosition(new Vector2Int(x, y)), Quaternion.identity);
                 }
                 if (map[y, x] == 4)
                 {
-                    Instantiate(
-                    BlockPrefab,
-                    IndexToPosition(new Vector2Int(x, y)),
-                    Quaternion.identity
-                    );
+                    Instantiate(BlockPrefab, IndexToPosition(new Vector2Int(x, y)), Quaternion.identity);
                 }
-
             }
         }
-
-
     }
 
     void Start()
     {
         Screen.SetResolution(1280, 720, false);
-        // ステージ1の初期化
         InitializeStage1();
         InitializeObjects();
-
-
     }
 
     void Update()
     {
         if (!IsCleard())
         {
+            Vector2Int playerIndex = GetPlayerIndex();
 
-            if (Input.GetKeyUp(KeyCode.W))
+            if (Input.GetKeyDown(KeyCode.W))
             {
-                Vector2Int playerIndex = GetPlayerIndex();
-                MoveNumber("Player",
-                    playerIndex,
-                    playerIndex + new Vector2Int(0, -1)
-                    );
+                MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(0, -1));
             }
 
-            if (Input.GetKeyUp(KeyCode.S))
+            if (Input.GetKeyDown(KeyCode.S))
             {
-                Vector2Int playerIndex = GetPlayerIndex();
-                MoveNumber("Player",
-                    playerIndex,
-                    playerIndex + new Vector2Int(0, 1)
-                    );
+                MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(0, 1));
             }
 
-            if (Input.GetKeyUp(KeyCode.D))
+            if (Input.GetKeyDown(KeyCode.D))
             {
-                Vector2Int playerIndex = GetPlayerIndex();
-                MoveNumber("Player",
-                   playerIndex,
-                   playerIndex + new Vector2Int(1, 0)
-                   );
+                MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(1, 0));
             }
 
-            if (Input.GetKeyUp(KeyCode.A))
+            if (Input.GetKeyDown(KeyCode.A))
             {
-                Vector2Int playerIndex = GetPlayerIndex();
-                MoveNumber("Player",
-                    playerIndex,
-                    playerIndex + new Vector2Int(-1, 0)
-                    );
-
+                MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(-1, 0));
             }
-            if (Input.GetKeyUp(KeyCode.Space))
+
+            if (Input.GetKeyDown(KeyCode.Z)) // Undo機能のキー
+            {
+                Debug.Log("Undo key pressed");
+                undoManager.Undo();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Y)) // Redo機能のキー
+            {
+                Debug.Log("Redo key pressed");
+                undoManager.Redo();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
             {
                 ResetGame();
             }
         }
-        // もしクリアしてたら
+
         if (IsCleard())
         {
             clearTimer += 1.0f / 60.0f;
-            // ゲームオブジェクトのSetActiveメソッドを使い有効化
             clearText.SetActive(true);
-            Debug.Log("Clear");
             if (clearTimer >= 20.0f)
             {
-                // リセットする
                 ResetGame();
                 clearTimer = 0.0f;
-              
             }
         }
         else
         {
             clearText.SetActive(false);
         }
+    }
+}
+public interface ICommand
+{
+    void Execute();
+    void UnExecute();
+}
+public class MoveCommand : ICommand
+{
+    private GameObject[,] field;
+    private Vector2Int moveFrom;
+    private Vector2Int moveTo;
+    private string tag;
+    private NewBehaviourScript script;
 
-    }//Update
+    public MoveCommand(GameObject[,] field, string tag, Vector2Int moveFrom, Vector2Int moveTo, NewBehaviourScript script)
+    {
+        this.field = field;
+        this.tag = tag;
+        this.moveFrom = moveFrom;
+        this.moveTo = moveTo;
+        this.script = script;
+    }
 
+    public void Execute()
+    {
+        Debug.Log($"Executing MoveCommand: moveFrom={moveFrom} moveTo={moveTo}");
+        script.MoveNumber(tag, moveFrom, moveTo, false); // false to prevent recording this move
+    }
+
+    public void UnExecute()
+    {
+        Debug.Log($"UnExecuting MoveCommand: moveFrom={moveFrom} moveTo={moveTo}");
+        script.MoveNumber(tag, moveTo, moveFrom, false); // false to prevent recording this move
+    }
+}
+public class UndoManager
+{
+    private Stack<ICommand> undoStack = new Stack<ICommand>();
+    private Stack<ICommand> redoStack = new Stack<ICommand>();
+
+    public void ExecuteCommand(ICommand command)
+    {
+        Debug.Log("Executing command");
+        command.Execute();
+        undoStack.Push(command);
+        redoStack.Clear();
+    }
+
+    public void Undo()
+    {
+        if (undoStack.Count > 0)
+        {
+            Debug.Log("Undo operation");
+            ICommand command = undoStack.Pop();
+            command.UnExecute();
+            redoStack.Push(command);
+        }
+        else
+        {
+            Debug.Log("Nothing to undo");
+        }
+    }
+
+    public void Redo()
+    {
+        if (redoStack.Count > 0)
+        {
+            Debug.Log("Redo operation");
+            ICommand command = redoStack.Pop();
+            command.Execute();
+            undoStack.Push(command);
+        }
+        else
+        {
+            Debug.Log("Nothing to redo");
+        }
+    }
 }
