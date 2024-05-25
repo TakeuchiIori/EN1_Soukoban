@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -112,10 +113,9 @@ public class NewBehaviourScript : MonoBehaviour
     }
     // ゲームをクリアしてリセットするまでの時間
     private float clearTimer;
-    void Start()
+    void InitializeStage1()
     {
-        Screen.SetResolution(1280, 720, false);
-        map = new int[,] { // 0をなにもないところ // 1を自機 // 2を動く壁 // 3をゴール // 4を動かない壁
+        map = new int[,] {
         { 4,4,4,4,4,4,4,4,4,4,4, },
         { 4,3,0,0,0,0,0,0,2,0,4, },
         { 4,0,0,2,0,0,0,0,2,0,4, },
@@ -126,7 +126,26 @@ public class NewBehaviourScript : MonoBehaviour
         { 4,0,0,0,0,0,0,0,0,0,4, },
         { 4,0,0,0,0,0,0,0,0,0,4, },
         { 4,4,4,4,4,4,4,4,4,4,4, },
-        };
+    };
+    }
+    void InitializeStage2()
+    {
+        map = new int[,] {
+        { 4,4,4,4,4,4,4,4,4,4,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,0,3,3,0,0,0,0,0,0,4, },
+        { 4,0,0,0,0,1,0,0,0,0,4, },
+        { 4,0,0,0,0,0,0,0,2,0,4, },
+        { 4,0,0,0,0,0,0,0,2,0,4, },
+        { 4,0,0,0,0,2,0,0,0,0,4, },
+        { 4,0,3,0,0,0,0,0,0,0,4, },
+        { 4,0,0,0,0,0,0,0,0,0,4, },
+        { 4,4,4,4,4,4,4,4,4,4,4, },
+    };
+    }
+
+    private void InitializeObjects()
+    {
         // 二重for文で二次元配列の情報を出力
         field = new GameObject
        [
@@ -141,7 +160,7 @@ public class NewBehaviourScript : MonoBehaviour
                 {
                     field[y, x] = Instantiate(
                         playerPrefab,
-                       IndexToPosition(new Vector2Int(x,y)),
+                       IndexToPosition(new Vector2Int(x, y)),
                         Quaternion.identity
                         );
                 }
@@ -152,14 +171,14 @@ public class NewBehaviourScript : MonoBehaviour
                          IndexToPosition(new Vector2Int(x, y)),
                         Quaternion.identity
                         );
-                } 
-                if(map[y, x] == 3)
+                }
+                if (map[y, x] == 3)
                 {
-                        Instantiate(
-                        goalPrefab,
-                        IndexToPosition(new Vector2Int(x, y)),
-                        Quaternion.identity
-                        );
+                    Instantiate(
+                    goalPrefab,
+                    IndexToPosition(new Vector2Int(x, y)),
+                    Quaternion.identity
+                    );
                 }
                 if (map[y, x] == 4)
                 {
@@ -173,13 +192,22 @@ public class NewBehaviourScript : MonoBehaviour
             }
         }
 
- 
+
+    }
+
+    void Start()
+    {
+        Screen.SetResolution(1280, 720, false);
+        // ステージ1の初期化
+        InitializeStage1();
+        InitializeObjects();
+
 
     }
 
     void Update()
     {
-        if (IsCleard() == false)
+        if (!IsCleard())
         {
 
             if (Input.GetKeyUp(KeyCode.W))
@@ -218,6 +246,10 @@ public class NewBehaviourScript : MonoBehaviour
                     );
 
             }
+            if (Input.GetKeyUp(KeyCode.Space))
+            {
+                ResetGame();
+            }
         }
         // もしクリアしてたら
         if (IsCleard())
@@ -230,6 +262,8 @@ public class NewBehaviourScript : MonoBehaviour
             {
                 // リセットする
                 ResetGame();
+                clearTimer = 0.0f;
+              
             }
         }
         else
