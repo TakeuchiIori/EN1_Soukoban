@@ -203,6 +203,7 @@ public class NewBehaviourScript : MonoBehaviour
                 undoManager.Undo();
             }
 
+
             if (Input.GetKeyDown(KeyCode.Y)) // Redo機能のキー
             {
                 Debug.Log("Redo key pressed");
