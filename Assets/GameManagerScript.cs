@@ -87,7 +87,7 @@ public class NewBehaviourScript : MonoBehaviour
     if (map[moveTo.y, moveTo.x] == 4) { return false; }
     
     // ボックスの移動を記録するための MoveRecord オブジェクトを作成
-    MoveRecord moveRecord = new MoveRecord(tag, moveFrom, moveTo);
+   // MoveRecord moveRecord = new MoveRecord(tag, moveFrom, moveTo);
 
     // 目標位置が空であるか、押せるボックスがあるかを確認する
     if (field[moveTo.y, moveTo.x] == null || (field[moveTo.y, moveTo.x].tag == "Box" && MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), false)))
@@ -109,14 +109,19 @@ public class NewBehaviourScript : MonoBehaviour
         {
             Instantiate(ParticlePrefab, IndexToPosition(moveFrom), Quaternion.identity);
         }
-        
-        // Undo/Redo用に移動履歴を記録
-        if (isRecording)
-        {
-            moveHistory.Add(moveRecord); // プレイヤーとボックスの両方の移動を記録
-            historyIndex = moveHistory.Count - 1;
-        }
-        return true;
+
+            // Undo/Redo用に移動履歴を記録
+            if (isRecording)
+            {
+                // プレイヤーかボックスかに応じて移動履歴を作成する
+                if (tag == "Player" || tag == "Box")
+                {
+                    moveHistory.Add(new MoveRecord(tag, moveFrom, moveTo));
+                    historyIndex = moveHistory.Count - 1;
+                }
+            }
+
+            return true;
     }
     return false; // 移動が失敗した場合
 }
@@ -128,16 +133,17 @@ public class NewBehaviourScript : MonoBehaviour
     void InitializeStage1()
     {
         map = new int[,] {
-            { 4,4,4,4,4,4,4,4,4,4,4, },
-            { 4,3,0,0,0,0,0,0,2,0,4, },
-            { 4,0,0,2,0,0,0,0,2,0,4, },
-            { 4,0,0,0,0,1,0,0,0,0,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,3,0,0,0,0,0,0,0,3,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,4,4,4,4,4,4,4,4,4,4, },
+           { 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, },
+            { 4,3,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,2,0,0,0,0,2,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
+            { 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, },
         };
     }
     void InitializeStage2()
@@ -195,23 +201,20 @@ public class NewBehaviourScript : MonoBehaviour
         InitializeObjects();
     }
     // Undoメソッドの修正
-    public void UndoMove()
+   public void UndoMove()
+{
+    if (historyIndex >= 0)
     {
-        if (historyIndex >= 0)
+        MoveRecord record = moveHistory[historyIndex];
+        if (record.tag == "Player" || record.tag == "Box")
         {
-            MoveRecord record = moveHistory[historyIndex];
-           // Debug.Log($"Undo: tag={record.tag}, moveFrom={record.moveFrom}, moveTo={record.moveTo}");
-            if (record.tag == "Player")
-            {
-                MoveNumber("Player", record.moveTo, record.moveFrom, false);
-            }
-            else if (record.tag == "Box")
-            {
-                MoveNumber("Box", record.moveTo, record.moveFrom, false);
-            }
-            historyIndex--;
+            MoveNumber(record.tag, record.moveTo, record.moveFrom, false);
         }
+        historyIndex--;
     }
+}
+
+
 
     // Redoメソッドの修正
     public void RedoMove()
