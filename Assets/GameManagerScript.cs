@@ -16,7 +16,21 @@ public class NewBehaviourScript : MonoBehaviour
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
+    public class MoveRecord
+    {
+        public string tag;
+        public Vector2Int moveFrom;
+        public Vector2Int moveTo;
 
+        public MoveRecord(string _tag, Vector2Int _moveFrom, Vector2Int _moveTo)
+        {
+            tag = _tag;
+            moveFrom = _moveFrom;
+            moveTo = _moveTo;
+        }
+    }
+    List<MoveRecord> moveHistory = new List<MoveRecord>();
+    int historyIndex = -1;
 
     bool IsCleard()
     {
@@ -87,6 +101,13 @@ public class NewBehaviourScript : MonoBehaviour
         {
             Instantiate(ParticlePrefab, IndexToPosition(moveFrom), Quaternion.identity);
         }
+        // Undo/Redo用に移動履歴を記録
+        if (isRecording)
+        {
+            moveHistory.Add(new MoveRecord(tag, moveFrom, moveTo));
+            historyIndex = moveHistory.Count - 1;
+        }
+
 
         return true;
     }
@@ -158,8 +179,28 @@ public class NewBehaviourScript : MonoBehaviour
             }
         }
     }
+    // Undoメソッドの追加
+    public void UndoMove()
+    {
+        if (historyIndex >= 0)
+        {
+            MoveRecord record = moveHistory[historyIndex];
+            MoveNumber(record.tag, record.moveTo, record.moveFrom, false);
+            historyIndex--;
+        }
+    }
 
-    void MovePlayer()
+    // Redoメソッドの追加
+    public void RedoMove()
+    {
+        if (historyIndex < moveHistory.Count - 1)
+        {
+            historyIndex++;
+            MoveRecord record = moveHistory[historyIndex];
+            MoveNumber(record.tag, record.moveFrom, record.moveTo, false);
+        }
+    }
+    void Move()
     {
         if (!IsCleard())
         {
@@ -217,7 +258,17 @@ public class NewBehaviourScript : MonoBehaviour
 
     void Update()
     {
-        MovePlayer();
+        Move();
+        // UndoとRedoの入力処理
+        if (Input.GetKeyDown(KeyCode.Z) && Input.GetKey(KeyCode.LeftControl))
+        {
+            UndoMove();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Y) && Input.GetKey(KeyCode.LeftControl))
+        {
+            RedoMove();
+        }
     }
  
 }
