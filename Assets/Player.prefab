@@ -55,7 +55,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 4ca1d18701b2293458e483012d6e381f, type: 2}
+  - {fileID: 2100000, guid: e46288adfdb7b4145842ad2a032b1eeb, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -101,6 +101,8 @@ MonoBehaviour:
   boxPrefab: {fileID: 0}
   goalPrefab: {fileID: 0}
   clearText: {fileID: 0}
+  ParticlePrefab: {fileID: 0}
+  BlockPrefab: {fileID: 0}
 --- !u!114 &5123432340276841333
 MonoBehaviour:
   m_ObjectHideFlags: 0
