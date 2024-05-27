@@ -79,23 +79,23 @@ public class NewBehaviourScript : MonoBehaviour
     }
 
     public bool MoveNumber(string tag, Vector2Int moveFrom, Vector2Int moveTo, bool isRecording = true)
-{
+    {
    // Debug.Log($"MoveNumber called with tag={tag}, moveFrom={moveFrom}, moveTo={moveTo}, isRecording={isRecording}");
 
     if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
     if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
     if (map[moveTo.y, moveTo.x] == 4) { return false; }
-    
-    // ボックスの移動を記録するための MoveRecord オブジェクトを作成
-   // MoveRecord moveRecord = new MoveRecord(tag, moveFrom, moveTo);
 
-    // 目標位置が空であるか、押せるボックスがあるかを確認する
-    if (field[moveTo.y, moveTo.x] == null || (field[moveTo.y, moveTo.x].tag == "Box" && MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), false)))
+        // ボックスの移動を記録するための MoveRecord オブジェクトを作成
+        MoveRecord moveRecord = new MoveRecord(tag, moveFrom, moveTo);
+
+        // 目標位置が空であるか、押せるボックスがあるかを確認する
+        if (field[moveTo.y, moveTo.x] == null || (field[moveTo.y, moveTo.x].tag == "Box" && MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), true)))
     {
         if (field[moveTo.y, moveTo.x] != null && field[moveTo.y, moveTo.x].tag == "Box")
         {
             // 目標位置にボックスがある場合は再帰的にボックスを移動する
-            bool success = MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), false);
+            bool success = MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom),isRecording == false);
             if (!success) { return false; }
         }
 
@@ -114,22 +114,21 @@ public class NewBehaviourScript : MonoBehaviour
             if (isRecording)
             {
                 // プレイヤーかボックスかに応じて移動履歴を作成する
-                if (tag == "Player" || tag == "Box")
-                {
-                    moveHistory.Add(new MoveRecord(tag, moveFrom, moveTo));
-                    historyIndex = moveHistory.Count - 1;
-                }
+                moveHistory.Add(moveRecord);
+                historyIndex = moveHistory.Count - 1;
             }
 
             return true;
     }
     return false; // 移動が失敗した場合
-}
+    }
 
 
    
 
     private float clearTimer;
+   
+
     void InitializeStage1()
     {
         map = new int[,] {
@@ -144,21 +143,6 @@ public class NewBehaviourScript : MonoBehaviour
             { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
             { 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4, },
             { 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, },
-        };
-    }
-    void InitializeStage2()
-    {
-        map = new int[,] {
-            { 4,4,4,4,4,4,4,4,4,4,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,0,3,3,0,0,0,0,0,0,4, },
-            { 4,0,0,0,0,1,0,0,0,0,4, },
-            { 4,0,0,0,0,0,0,0,2,0,4, },
-            { 4,0,0,0,0,0,0,0,2,0,4, },
-            { 4,0,0,0,0,2,0,0,0,0,4, },
-            { 4,0,3,0,0,0,0,0,0,0,4, },
-            { 4,0,0,0,0,0,0,0,0,0,4, },
-            { 4,4,4,4,4,4,4,4,4,4,4, },
         };
     }
 
