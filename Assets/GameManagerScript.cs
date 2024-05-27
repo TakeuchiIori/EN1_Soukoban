@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class NewBehaviourScript : MonoBehaviour
 {
-    int[] map_2;
+
     public GameObject playerPrefab;
     public GameObject boxPrefab;
     public GameObject goalPrefab;
@@ -16,7 +16,7 @@ public class NewBehaviourScript : MonoBehaviour
     int[,] map;          // レベルデザイン用の配列
     GameObject[,] field; // ゲーム管理用の配列
 
-    private UndoManager undoManager = new UndoManager(); // UndoManagerのインスタンス化
+
 
     bool IsCleard()
     {
@@ -86,11 +86,6 @@ public class NewBehaviourScript : MonoBehaviour
         for (int i = 0; i < 10; ++i)
         {
             Instantiate(ParticlePrefab, IndexToPosition(moveFrom), Quaternion.identity);
-        }
-
-        if (isRecording)
-        {
-            undoManager.ExecuteCommand(new MoveCommand(field, tag, moveFrom, moveTo, this));
         }
 
         return true;
@@ -164,14 +159,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
     }
 
-    void Start()
-    {
-        Screen.SetResolution(1280, 720, false);
-        InitializeStage1();
-        InitializeObjects();
-    }
-
-    void Update()
+    void MovePlayer()
     {
         if (!IsCleard())
         {
@@ -197,19 +185,6 @@ public class NewBehaviourScript : MonoBehaviour
                 MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(-1, 0));
             }
 
-            if (Input.GetKeyDown(KeyCode.Z)) // Undo機能のキー
-            {
-                Debug.Log("Undo key pressed");
-                undoManager.Undo();
-            }
-
-
-            if (Input.GetKeyDown(KeyCode.Y)) // Redo機能のキー
-            {
-                Debug.Log("Redo key pressed");
-                undoManager.Redo();
-            }
-
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ResetGame();
@@ -218,94 +193,31 @@ public class NewBehaviourScript : MonoBehaviour
 
         if (IsCleard())
         {
-            clearTimer += 1.0f / 60.0f;
             clearText.SetActive(true);
-            if (clearTimer >= 20.0f)
-            {
-                ResetGame();
-                clearTimer = 0.0f;
-            }
+            StartCoroutine(WaitAndReset());
         }
         else
         {
             clearText.SetActive(false);
         }
-    }
-}
-public interface ICommand
-{
-    void Execute();
-    void UnExecute();
-}
-public class MoveCommand : ICommand
-{
-    private GameObject[,] field;
-    private Vector2Int moveFrom;
-    private Vector2Int moveTo;
-    private string tag;
-    private NewBehaviourScript script;
-
-    public MoveCommand(GameObject[,] field, string tag, Vector2Int moveFrom, Vector2Int moveTo, NewBehaviourScript script)
-    {
-        this.field = field;
-        this.tag = tag;
-        this.moveFrom = moveFrom;
-        this.moveTo = moveTo;
-        this.script = script;
-    }
-
-    public void Execute()
-    {
-        Debug.Log($"Executing MoveCommand: moveFrom={moveFrom} moveTo={moveTo}");
-        script.MoveNumber(tag, moveFrom, moveTo, false); // false to prevent recording this move
-    }
-
-    public void UnExecute()
-    {
-        Debug.Log($"UnExecuting MoveCommand: moveFrom={moveFrom} moveTo={moveTo}");
-        script.MoveNumber(tag, moveTo, moveFrom, false); // false to prevent recording this move
-    }
-}
-public class UndoManager
-{
-    private Stack<ICommand> undoStack = new Stack<ICommand>();
-    private Stack<ICommand> redoStack = new Stack<ICommand>();
-
-    public void ExecuteCommand(ICommand command)
-    {
-        Debug.Log("Executing command");
-        command.Execute();
-        undoStack.Push(command);
-        redoStack.Clear();
-    }
-
-    public void Undo()
-    {
-        if (undoStack.Count > 0)
+        IEnumerator WaitAndReset()
         {
-            Debug.Log("Undo operation");
-            ICommand command = undoStack.Pop();
-            command.UnExecute();
-            redoStack.Push(command);
+            yield return new WaitForSeconds(3f);
+            ResetGame();
         }
-        else
-        {
-            Debug.Log("Nothing to undo");
-        }
+
+
+    }
+    void Start()
+    {
+        Screen.SetResolution(1280, 720, false);
+        InitializeStage1();
+        InitializeObjects();
     }
 
-    public void Redo()
+    void Update()
     {
-        if (redoStack.Count > 0)
-        {
-            Debug.Log("Redo operation");
-            ICommand command = redoStack.Pop();
-            command.Execute();
-            undoStack.Push(command);
-        }
-        else
-        {
-            Debug.Log("Nothing to redo");
-        }
+        MovePlayer();
     }
+ 
 }
