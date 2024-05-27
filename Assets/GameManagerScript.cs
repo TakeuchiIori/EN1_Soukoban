@@ -79,19 +79,27 @@ public class NewBehaviourScript : MonoBehaviour
     }
 
     public bool MoveNumber(string tag, Vector2Int moveFrom, Vector2Int moveTo, bool isRecording = true)
-    {
-        Debug.Log($"MoveNumber called with tag={tag}, moveFrom={moveFrom}, moveTo={moveTo}, isRecording={isRecording}");
+{
+   // Debug.Log($"MoveNumber called with tag={tag}, moveFrom={moveFrom}, moveTo={moveTo}, isRecording={isRecording}");
 
-        if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
-        if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
-        if (map[moveTo.y, moveTo.x] == 4) { return false; }
+    if (moveTo.y < 0 || moveTo.y >= field.GetLength(0)) { return false; }
+    if (moveTo.x < 0 || moveTo.x >= field.GetLength(1)) { return false; }
+    if (map[moveTo.y, moveTo.x] == 4) { return false; }
+    
+    // ボックスの移動を記録するための MoveRecord オブジェクトを作成
+    MoveRecord moveRecord = new MoveRecord(tag, moveFrom, moveTo);
+
+    // 目標位置が空であるか、押せるボックスがあるかを確認する
+    if (field[moveTo.y, moveTo.x] == null || (field[moveTo.y, moveTo.x].tag == "Box" && MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), false)))
+    {
         if (field[moveTo.y, moveTo.x] != null && field[moveTo.y, moveTo.x].tag == "Box")
         {
-            Vector2Int velocity = moveTo - moveFrom;
-            bool success = MoveNumber(tag, moveTo, moveTo + velocity, false);
+            // 目標位置にボックスがある場合は再帰的にボックスを移動する
+            bool success = MoveNumber("Box", moveTo, moveTo + (moveTo - moveFrom), false);
             if (!success) { return false; }
         }
 
+        // 実際の移動処理
         Vector3 moveToPosition = IndexToPosition(new Vector2Int(moveTo.x, moveTo.y));
         field[moveFrom.y, moveFrom.x].GetComponent<Move>().MoveTo(moveToPosition);
         field[moveTo.y, moveTo.x] = field[moveFrom.y, moveFrom.x];
@@ -101,25 +109,20 @@ public class NewBehaviourScript : MonoBehaviour
         {
             Instantiate(ParticlePrefab, IndexToPosition(moveFrom), Quaternion.identity);
         }
+        
         // Undo/Redo用に移動履歴を記録
         if (isRecording)
         {
-            moveHistory.Add(new MoveRecord(tag, moveFrom, moveTo));
+            moveHistory.Add(moveRecord); // プレイヤーとボックスの両方の移動を記録
             historyIndex = moveHistory.Count - 1;
         }
-
-
         return true;
     }
+    return false; // 移動が失敗した場合
+}
 
-    void ResetGame()
-    {
-        foreach (GameObject obj in field)
-        {
-            Destroy(obj);
-        }
-        Start();
-    }
+
+   
 
     private float clearTimer;
     void InitializeStage1()
@@ -179,25 +182,53 @@ public class NewBehaviourScript : MonoBehaviour
             }
         }
     }
-    // Undoメソッドの追加
+    void ResetGame()
+    {
+        // プレイヤーとボックスのオブジェクトを破棄し、再生成する
+        foreach (GameObject obj in field)
+        {
+            if (obj != null && (obj.tag == "Player" || obj.tag == "Box"))
+            {
+                Destroy(obj);
+            }
+        }
+        InitializeObjects();
+    }
+    // Undoメソッドの修正
     public void UndoMove()
     {
         if (historyIndex >= 0)
         {
             MoveRecord record = moveHistory[historyIndex];
-            MoveNumber(record.tag, record.moveTo, record.moveFrom, false);
+           // Debug.Log($"Undo: tag={record.tag}, moveFrom={record.moveFrom}, moveTo={record.moveTo}");
+            if (record.tag == "Player")
+            {
+                MoveNumber("Player", record.moveTo, record.moveFrom, false);
+            }
+            else if (record.tag == "Box")
+            {
+                MoveNumber("Box", record.moveTo, record.moveFrom, false);
+            }
             historyIndex--;
         }
     }
 
-    // Redoメソッドの追加
+    // Redoメソッドの修正
     public void RedoMove()
     {
         if (historyIndex < moveHistory.Count - 1)
         {
             historyIndex++;
             MoveRecord record = moveHistory[historyIndex];
-            MoveNumber(record.tag, record.moveFrom, record.moveTo, false);
+           // Debug.Log($"Redo: tag={record.tag}, moveFrom={record.moveFrom}, moveTo={record.moveTo}");
+            if (record.tag == "Player")
+            {
+                MoveNumber("Player", record.moveFrom, record.moveTo, false);
+            }
+            else if (record.tag == "Box")
+            {
+                MoveNumber("Box", record.moveFrom, record.moveTo, false);
+            }
         }
     }
     void Move()
@@ -225,7 +256,16 @@ public class NewBehaviourScript : MonoBehaviour
             {
                 MoveNumber("Player", playerIndex, playerIndex + new Vector2Int(-1, 0));
             }
+            // UndoとRedoの入力処理
+            if (Input.GetKeyDown(KeyCode.Z))
+            {
+                UndoMove();
+            }
 
+            if (Input.GetKeyDown(KeyCode.Y))
+            {
+                RedoMove();
+            }
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ResetGame();
@@ -259,16 +299,7 @@ public class NewBehaviourScript : MonoBehaviour
     void Update()
     {
         Move();
-        // UndoとRedoの入力処理
-        if (Input.GetKeyDown(KeyCode.Z) && Input.GetKey(KeyCode.LeftControl))
-        {
-            UndoMove();
-        }
 
-        if (Input.GetKeyDown(KeyCode.Y) && Input.GetKey(KeyCode.LeftControl))
-        {
-            RedoMove();
-        }
     }
  
 }
